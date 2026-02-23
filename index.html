@@ -1,0 +1,788 @@
+					<!DOCTYPE html>
+					
+					<html lang="ja">
+					<head>
+					<meta charset="UTF-8">
+					<meta name="viewport" content="width=device-width, initial-scale=1.0">
+					<title>シフト管理システム</title>
+					<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+					<style>
+					  :root {
+					    --bg:#f0f2f5; --surface:#fff; --surface2:#f8f9fb; --border:#e2e6ea;
+					    --primary:#1a56db; --primary-light:#e8f0fe;
+					    --sat:#3b82f6; --sat-bg:#eff6ff; --sun:#ef4444; --sun-bg:#fef2f2;
+					    --text:#1e293b; --text2:#64748b; --text3:#94a3b8;
+					    --shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.04);
+					    --radius:12px;
+					  }
+					  *{box-sizing:border-box;margin:0;padding:0;}
+					  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+					
+					/* PIN */
+					.pin-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#1e3a8a,#1a56db,#2563eb);}
+					.pin-card{background:#fff;border-radius:20px;padding:40px 32px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.25);text-align:center;}
+					.pin-logo{font-size:22px;font-weight:700;color:var(–primary);margin-bottom:6px;}
+					.pin-logo span{color:var(–text);font-weight:300;}
+					.pin-sub{font-size:13px;color:var(–text2);margin-bottom:28px;}
+					.pin-label{font-size:11px;font-weight:700;color:var(–text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+					.pin-input{width:100%;padding:14px;border-radius:10px;border:2px solid var(–border);font-family:‘IBM Plex Mono’,monospace;font-size:22px;font-weight:700;text-align:center;letter-spacing:8px;outline:none;transition:all .15s;margin-bottom:14px;}
+					.pin-input:focus{border-color:var(–primary);box-shadow:0 0 0 3px rgba(26,86,219,.12);}
+					.pin-btn{width:100%;padding:13px;border-radius:10px;border:none;background:var(–primary);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
+					.pin-btn:hover{background:#1447c7;}
+					.pin-error{margin-top:12px;font-size:13px;color:var(–sun);font-weight:500;min-height:20px;}
+					.pin-hint{margin-top:20px;font-size:11px;color:var(–text3);line-height:1.7;}
+					
+					/* App shell */
+					.app{display:none;}
+					.app.show{display:block;}
+					.header{background:var(–surface);border-bottom:1px solid var(–border);padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.06);}
+					.header-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:56px;gap:10px;}
+					.logo{font-size:16px;font-weight:700;color:var(–primary);white-space:nowrap;}
+					.logo span{color:var(–text);font-weight:300;}
+					.logo-role{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700;margin-left:6px;vertical-align:middle;}
+					.logo-role.emp{background:var(–primary-light);color:var(–primary);}
+					.logo-role.admin{background:#fef3c7;color:#92400e;}
+					.nav-tabs{display:flex;gap:3px;background:var(–bg);padding:4px;border-radius:10px;}
+					.nav-tab{padding:6px 13px;border-radius:7px;border:none;background:transparent;font-family:inherit;font-size:12px;font-weight:500;color:var(–text2);cursor:pointer;transition:all .15s;white-space:nowrap;}
+					.nav-tab.active{background:var(–surface);color:var(–primary);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+					.logout-btn{padding:5px 11px;border-radius:7px;border:1.5px solid var(–border);background:transparent;font-family:inherit;font-size:12px;color:var(–text2);cursor:pointer;transition:all .15s;white-space:nowrap;}
+					.logout-btn:hover{color:var(–sun);border-color:var(–sun);}
+					
+					/* Period bar */
+					.period-bar{background:var(–surface);border-bottom:1px solid var(–border);padding:9px 20px;}
+					.period-bar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+					.month-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(–border);background:var(–surface);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(–text2);}
+					.month-btn:hover{background:var(–primary-light);color:var(–primary);border-color:var(–primary);}
+					.period-label{font-size:15px;font-weight:700;color:var(–text);min-width:180px;}
+					.period-range{font-size:11px;color:var(–text2);background:var(–surface2);padding:3px 10px;border-radius:20px;border:1px solid var(–border);}
+					
+					/* Main */
+					.main{max-width:1200px;margin:0 auto;padding:18px;}
+					
+					/* Select card */
+					.select-card{background:var(–surface);border-radius:var(–radius);padding:16px 18px;margin-bottom:14px;box-shadow:var(–shadow);}
+					.card-title{font-size:11px;font-weight:700;color:var(–text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+					.emp-select-wrap{position:relative;display:inline-block;width:100%;max-width:280px;}
+					.emp-select{width:100%;padding:10px 34px 10px 13px;border-radius:10px;border:1.5px solid var(–border);background:var(–surface2);font-family:inherit;font-size:14px;font-weight:500;color:var(–text);cursor:pointer;appearance:none;-webkit-appearance:none;outline:none;transition:all .15s;}
+					.emp-select:focus{border-color:var(–primary);box-shadow:0 0 0 3px rgba(26,86,219,.12);}
+					.emp-select-arrow{position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(–text2);font-size:11px;}
+					.emp-status-row{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12px;color:var(–text2);}
+					.sdot-sm{width:8px;height:8px;border-radius:50%;background:var(–border);}
+					.sdot-sm.done{background:#10b981;} .sdot-sm.partial{background:#f59e0b;}
+					
+					/* Shift card */
+					.shift-card{background:var(–surface);border-radius:var(–radius);padding:18px;box-shadow:var(–shadow);overflow-x:auto;}
+					.shift-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+					.emp-badge{font-size:16px;font-weight:700;}
+					.save-btn{padding:8px 18px;border-radius:8px;border:none;background:var(–primary);color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;}
+					.save-btn:hover{background:#1447c7;} .save-btn:active{transform:scale(.97);} .save-btn:disabled{background:var(–text3);cursor:not-allowed;}
+					.sync-badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:3px;}
+					.sync-ok{background:#ecfdf5;color:#047857;} .sync-err{background:#fef2f2;color:#b91c1c;} .sync-loading{background:#eff6ff;color:var(–primary);}
+					
+					/* Table */
+					.shift-table{width:100%;border-collapse:collapse;min-width:300px;}
+					.shift-table th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(–text3);padding:7px 10px;border-bottom:1px solid var(–border);text-align:left;}
+					.shift-table td{padding:5px 10px;border-bottom:1px solid var(–border);vertical-align:middle;}
+					.shift-table tr:last-child td{border-bottom:none;}
+					.date-cell{display:flex;align-items:center;gap:7px;white-space:nowrap;}
+					.date-num{font-family:‘IBM Plex Mono’,monospace;font-size:13px;font-weight:600;min-width:22px;}
+					.day-pill{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;}
+					.is-sat .date-num{color:var(–sat);} .is-sat .day-pill{background:var(–sat-bg);color:var(–sat);}
+					.is-sun .date-num,.is-holi .date-num{color:var(–sun);} .is-sun .day-pill,.is-holi .day-pill{background:var(–sun-bg);color:var(–sun);}
+					.holi-name{font-size:10px;color:var(–sun);}
+					
+					/* Shift buttons — generated dynamically from config */
+					.shift-sel{display:flex;gap:5px;flex-wrap:wrap;}
+					.s-btn{padding:5px 10px;border-radius:6px;border:1.5px solid var(–border);background:transparent;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:all .12s;color:var(–text2);}
+					.s-btn:hover{border-color:var(–text);color:var(–text);}
+					
+					/* Other text input */
+					.other-wrap{display:flex;align-items:center;gap:6px;margin-top:5px;}
+					.other-inp{padding:5px 9px;border-radius:6px;border:1.5px solid #8b5cf6;background:#f5f3ff;font-family:inherit;font-size:12px;color:#4c1d95;width:155px;outline:none;transition:all .15s;}
+					.other-inp:focus{box-shadow:0 0 0 3px rgba(139,92,246,.15);}
+					
+					/* Summary */
+					.summary-bar{display:flex;gap:12px;margin-top:13px;padding-top:13px;border-top:1px solid var(–border);flex-wrap:wrap;}
+					.sum-item{display:flex;align-items:center;gap:4px;font-size:12px;}
+					.sum-count{font-family:‘IBM Plex Mono’,monospace;font-weight:700;font-size:14px;}
+					
+					/* Admin */
+					.admin-controls{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+					.action-btn{padding:8px 16px;border-radius:8px;border:1.5px solid var(–border);background:var(–surface);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(–text);transition:all .15s;display:flex;align-items:center;gap:5px;}
+					.action-btn:hover{border-color:var(–primary);color:var(–primary);background:var(–primary-light);}
+					.admin-wrap{background:var(–surface);border-radius:var(–radius);box-shadow:var(–shadow);overflow-x:auto;}
+					.admin-tbl{width:100%;border-collapse:collapse;}
+					.admin-tbl th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(–text3);padding:11px 13px;border-bottom:2px solid var(–border);text-align:center;background:var(–surface2);white-space:nowrap;}
+					.admin-tbl th:first-child{text-align:left;}
+					.admin-tbl td{padding:9px 13px;border-bottom:1px solid var(–border);text-align:center;font-size:13px;}
+					.admin-tbl td:first-child{text-align:left;font-weight:600;}
+					.admin-tbl tr:last-child td{border-bottom:none;}
+					.admin-tbl tr:hover td{background:var(–surface2);}
+					.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+					.badge-total{background:var(–primary-light);color:var(–primary);}
+					.sdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
+					.sdot-done{background:#10b981;} .sdot-partial{background:#f59e0b;} .sdot-none{background:var(–border);}
+					
+					/* Empty */
+					.empty{text-align:center;padding:44px 20px;color:var(–text3);}
+					.empty .ico{font-size:34px;margin-bottom:8px;}
+					.empty p{font-size:13px;line-height:1.7;}
+					
+					/* Toast / Loading */
+					.toast{position:fixed;bottom:22px;right:20px;padding:11px 16px;background:#1e293b;color:#fff;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);opacity:0;transform:translateY(8px);transition:all .25s;z-index:999;pointer-events:none;max-width:270px;}
+					.toast.show{opacity:1;transform:translateY(0);}
+					.loading{display:none;position:fixed;inset:0;background:rgba(255,255,255,.75);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:10px;}
+					.loading.show{display:flex;}
+					.spinner{width:34px;height:34px;border:3px solid var(–border);border-top-color:var(–primary);border-radius:50%;animation:spin .7s linear infinite;}
+					.load-txt{font-size:13px;color:var(–text2);font-weight:500;}
+					@keyframes spin{to{transform:rotate(360deg);}}
+					@media(max-width:600px){.main{padding:10px;}.period-label{font-size:13px;min-width:140px;}}
+					</style>
+					
+					</head>
+					<body>
+					
+					<div class="pin-screen" id="pinScreen">
+					  <div class="pin-card">
+					    <div class="pin-logo">Shift<span>管理</span></div>
+					    <div class="pin-sub">アクセスPINを入力してください</div>
+					    <div class="pin-label">PINコード</div>
+					    <input class="pin-input" type="password" id="pinInput" maxlength="8" placeholder="••••"
+					      onkeydown="if(event.key==='Enter')checkPin()">
+					    <button class="pin-btn" onclick="checkPin()">入室する</button>
+					    <div class="pin-error" id="pinError"></div>
+					    <div class="pin-hint">従業員の方は通知されたPINを入力してください。<br>管理者の方は管理者用PINを入力してください。</div>
+					  </div>
+					</div>
+					
+					<div class="app" id="app">
+					  <div class="loading" id="loading"><div class="spinner"></div><div class="load-txt" id="loadTxt">通信中...</div></div>
+					  <div class="toast" id="toast"></div>
+					
+					  <header class="header">
+					    <div class="header-inner">
+					      <div class="logo">Shift<span>管理</span><span class="logo-role" id="roleLabel"></span></div>
+					      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+					        <div class="nav-tabs">
+					          <button class="nav-tab active" onclick="switchView('input')">📝 シフト入力</button>
+					          <button class="nav-tab admin-only" onclick="switchView('admin')" style="display:none">📊 集計</button>
+					        </div>
+					        <button class="logout-btn" onclick="logout()">ログアウト</button>
+					      </div>
+					    </div>
+					  </header>
+					
+					  <div class="period-bar">
+					    <div class="period-bar-inner">
+					      <button class="month-btn" onclick="changePeriod(-1)">‹</button>
+					      <div class="period-label" id="periodLabel"></div>
+					      <button class="month-btn" onclick="changePeriod(1)">›</button>
+					      <span class="period-range" id="periodRange"></span>
+					    </div>
+					  </div>
+					
+					  <main class="main">
+					    <div id="inputView">
+					      <div class="select-card">
+					        <div class="card-title">従業員を選択</div>
+					        <div class="emp-select-wrap">
+					          <select class="emp-select" id="empDD" onchange="selectEmp(this.value)">
+					            <option value="">-- 従業員を選んでください --</option>
+					          </select>
+					          <span class="emp-select-arrow">▼</span>
+					        </div>
+					        <div class="emp-status-row" id="empStatusRow" style="display:none">
+					          <span class="sdot-sm" id="empDot"></span><span id="empTxt"></span>
+					        </div>
+					      </div>
+					      <div class="shift-card" id="shiftCard">
+					        <div class="empty"><div class="ico">👆</div><p>上から従業員を選択してシフトを入力してください</p></div>
+					      </div>
+					    </div>
+					
+					```
+					<div id="adminView" style="display:none">
+					  <div class="admin-controls">
+					    <button class="action-btn" onclick="exportCSV()">⬇ CSV出力</button>
+					    <button class="action-btn" onclick="reloadAdmin()">🔄 最新データ取得</button>
+					    <span style="font-size:12px;color:var(--text2);" id="adminSub"></span>
+					  </div>
+					  <div class="admin-wrap">
+					    <table class="admin-tbl">
+					      <thead><tr id="adminHead"></tr></thead>
+					      <tbody id="adminBody"></tbody>
+					    </table>
+					  </div>
+					</div>
+					```
+					
+					  </main>
+					</div>
+					
+					<script>
+					/* ================================================================
+					   ███████╗███████╗████████╗████████╗██╗███╗   ██╗ ██████╗
+					   ██╔════╝██╔════╝╚══██╔══╝╚══██╔══╝██║████╗  ██║██╔════╝
+					   ███████╗█████╗     ██║      ██║   ██║██╔██╗ ██║██║  ███╗
+					   ╚════██║██╔══╝     ██║      ██║   ██║██║╚██╗██║██║   ██║
+					   ███████║███████╗   ██║      ██║   ██║██║ ╚████║╚██████╔╝
+					   ╚══════╝╚══════╝   ╚═╝      ╚═╝   ╚═╝╚═╝  ╚═══╝ ╚═════╝
+					   ここの設定だけ変えれば運用変更に対応できます
+					================================================================ */
+					
+					const CONFIG = {
+					
+					  /* ----------------------------------------------------------
+					   * 1. GAS接続URL
+					   * GASデプロイ後に発行されたURLをここに貼り付ける
+					   * ---------------------------------------------------------- */
+					  GAS_URL: 'https://script.google.com/macros/s/AKfycbxC8YFCxCiKBeTDyvTvWCd0bP5wFbuRas8tfJ83Lnf4xlq-tAC6goc6xg69xKXPje-F/exec',
+					
+					  /* ----------------------------------------------------------
+					   * 2. PINコード
+					   * 従業員用と管理者用を別々に設定
+					   * 数字4〜8桁を推奨。管理者PINは従業員に教えないこと
+					   * ---------------------------------------------------------- */
+					  PIN_EMPLOYEE: '1234',
+					  PIN_ADMIN:    '9999',
+					
+					  /* ----------------------------------------------------------
+					   * 3. 従業員リスト
+					   * 追加: 末尾に '新しい名前', を追加
+					   * 削除: 該当行を削除（過去データはスプレッドシートに残ります）
+					   * 名前変更: 文字列を書き換え（過去データとの紐付けは手動対応が必要）
+					   * ---------------------------------------------------------- */
+					  EMPLOYEES: [
+					    '田中 一郎', '佐藤 花子', '山田 太郎', '鈴木 美咲', '伊藤 健太',
+					    '中村 由美', '小林 拓哉', '渡辺 奈々', '加藤 修',   '松本 恵',
+					    '井上 大輝', '木村 さくら','林 浩二',   '清水 香織', '山口 正樹',
+					  ],
+					
+					  /* ----------------------------------------------------------
+					   * 4. 締め日設定
+					   *
+					   * 【パターンA】月初〜月末（通常）の場合:
+					   *   CLOSING_DAY: 0   ← 0にするとA動作
+					   *
+					   * 【パターンB】21日〜翌20日などの場合:
+					   *   CLOSING_DAY: 20  ← 締め日の「日」を入れる
+					   *   例: 21日〜20日締め → 20
+					   *   例: 16日〜15日締め → 15
+					   *   例: 26日〜25日締め → 25
+					   *
+					   * 画面の「期」表示:
+					   *   PERIOD_LABEL: '月度'  → "2026年1月度"
+					   *   PERIOD_LABEL: '期'    → "2026年1期"
+					   * ---------------------------------------------------------- */
+					  CLOSING_DAY:  0,
+					  PERIOD_LABEL: '月度',
+					
+					  /* ----------------------------------------------------------
+					   * 5. シフト種別
+					   *
+					   * key:   内部キー（英数字。変更するとデータとの対応が崩れるので注意）
+					   * label: ボタンに表示する名前（自由に変更可）
+					   * color: ボタンの色（CSSカラーコード）
+					   * bg:    ボタンの背景色
+					   * countable: true=出勤日数にカウント / false=カウントしない
+					   * hasNote:   true=テキスト入力欄を表示
+					   *
+					   * ★ 追加例（深夜勤務):
+					   *   { key:'night', label:'深夜', color:'#7c3aed', bg:'#f5f3ff', countable:true,  hasNote:false },
+					   *
+					   * ★ 削除: 該当行をまるごと削除（過去データは残る）
+					   * ---------------------------------------------------------- */
+					  SHIFT_TYPES: [
+					    { key:'off',   label:'休み',    color:'#94a3b8', bg:'#f1f5f9', countable:false, hasNote:false },
+					    { key:'half',  label:'昼上がり',color:'#b45309', bg:'#fffbeb', countable:true,  hasNote:false },
+					    { key:'full',  label:'通し',    color:'#047857', bg:'#ecfdf5', countable:true,  hasNote:false },
+					    { key:'other', label:'その他',  color:'#6d28d9', bg:'#f5f3ff', countable:true,  hasNote:true  },
+					  ],
+					
+					  /* ----------------------------------------------------------
+					   * 6. 祝日リスト
+					   *
+					   * 形式: 'YYYY-MM-DD': '祝日名'
+					   * 追加: 末尾に行を追加するだけ
+					   * 2027年以降に使う場合は追記してください
+					   *
+					   * 参考: https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html
+					   * ---------------------------------------------------------- */
+					  HOLIDAYS: {
+					    '2026-01-01':'元日',         '2026-01-12':'成人の日',
+					    '2026-02-11':'建国記念日',   '2026-02-23':'天皇誕生日',
+					    '2026-03-20':'春分の日',     '2026-04-29':'昭和の日',
+					    '2026-05-03':'憲法記念日',   '2026-05-04':'みどりの日',
+					    '2026-05-05':'こどもの日',   '2026-07-20':'海の日',
+					    '2026-08-11':'山の日',       '2026-09-21':'敬老の日',
+					    '2026-09-23':'秋分の日',     '2026-10-12':'スポーツの日',
+					    '2026-11-03':'文化の日',     '2026-11-23':'勤労感謝の日',
+					    // 2027年分（必要に応じて追加）
+					    // '2027-01-01':'元日',
+					    // '2027-01-11':'成人の日',
+					  },
+					
+					};
+					/* ================================================================
+					   設定エリア ここまで
+					================================================================ */
+					
+					
+					// ── 設定からスタイルを動的生成 ──────────────────────────────────
+					(function injectStyles(){
+					  const styles = CONFIG.SHIFT_TYPES.map(t => `
+					    .sel-${t.key}{ border-color:${t.color} !important; background:${t.bg} !important; color:${t.color} !important; }
+					  `).join('');
+					  const el = document.createElement('style');
+					  el.textContent = styles;
+					  document.head.appendChild(el);
+					})();
+					
+					// ── 状態変数 ──────────────────────────────────────────────────
+					let role = null;
+					let currentPeriod = { year: 2026, month: 1 }; // 表示上の「期」
+					let selectedEmp = null;
+					let shiftData = {};
+					let currentView = 'input';
+					
+					// ── 締め日ロジック ─────────────────────────────────────────────
+					// currentPeriod {year, month} から実際の日付範囲を計算
+					function getPeriodRange(year, month) {
+					  const cd = CONFIG.CLOSING_DAY;
+					  if (cd === 0) {
+					    // 月初〜月末
+					    const start = new Date(year, month - 1, 1);
+					    const end   = new Date(year, month, 0);
+					    return { start, end };
+					  } else {
+					    // 例: cd=20 → 前月21日〜当月20日
+					    const start = new Date(year, month - 2, cd + 1); // 前月(cd+1)日
+					    const end   = new Date(year, month - 1, cd);     // 当月cd日
+					    return { start, end };
+					  }
+					}
+					
+					function getPeriodDays() {
+					  const { start, end } = getPeriodRange(currentPeriod.year, currentPeriod.month);
+					  const result = [];
+					  const cur = new Date(start);
+					  while (cur <= end) {
+					    const ds = fmtDate(cur);
+					    if (cur.getDay() === 6 || cur.getDay() === 0 || CONFIG.HOLIDAYS[ds]) {
+					      result.push({ day: cur.getDate(), month: cur.getMonth()+1, d: new Date(cur), ds });
+					    }
+					    cur.setDate(cur.getDate() + 1);
+					  }
+					  return result;
+					}
+					
+					function periodKey(y, m) { return `${y}-${String(m).padStart(2,'0')}`; }
+					function fmtDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+					const fmtDs = (y,m,day) => `${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+					
+					function getPeriodLabel() {
+					  const {year:y, month:m} = currentPeriod;
+					  return `${y}年 ${m}${CONFIG.PERIOD_LABEL}`;
+					}
+					function getPeriodRangeLabel() {
+					  const cd = CONFIG.CLOSING_DAY;
+					  const {year:y, month:m} = currentPeriod;
+					  if (cd === 0) {
+					    const lastDay = new Date(y, m, 0).getDate();
+					    return `${y}/${m}/1 〜 ${y}/${m}/${lastDay}`;
+					  } else {
+					    const { start, end } = getPeriodRange(y, m);
+					    return `${start.getMonth()+1}/${start.getDate()} 〜 ${end.getMonth()+1}/${end.getDate()}`;
+					  }
+					}
+					
+					// ── PIN ────────────────────────────────────────────────────────
+					function checkPin() {
+					  const pin = document.getElementById('pinInput').value.trim();
+					  const err = document.getElementById('pinError');
+					  if (pin === CONFIG.PIN_ADMIN) {
+					    role = 'admin'; startApp();
+					  } else if (pin === CONFIG.PIN_EMPLOYEE) {
+					    role = 'employee'; startApp();
+					  } else {
+					    err.textContent = 'PINコードが正しくありません';
+					    document.getElementById('pinInput').value = '';
+					    setTimeout(() => err.textContent = '', 3000);
+					  }
+					}
+					
+					function startApp() {
+					  document.getElementById('pinScreen').style.display = 'none';
+					  document.getElementById('app').classList.add('show');
+					  const rl = document.getElementById('roleLabel');
+					  if (role === 'admin') {
+					    rl.textContent = '管理者'; rl.className = 'logo-role admin';
+					    document.querySelector('.admin-only').style.display = '';
+					  } else {
+					    rl.textContent = '従業員'; rl.className = 'logo-role emp';
+					  }
+					  updatePeriodBar();
+					  renderEmpDD();
+					  loadPeriodData();
+					}
+					
+					function logout() {
+					  role = null; selectedEmp = null; shiftData = {};
+					  document.getElementById('pinInput').value = '';
+					  document.getElementById('pinScreen').style.display = 'flex';
+					  document.getElementById('app').classList.remove('show');
+					  document.querySelector('.admin-only').style.display = 'none';
+					}
+					
+					// ── GAS API ────────────────────────────────────────────────────
+					async function gasReq(action, payload = {}) {
+					  const params = new URLSearchParams({ action, ...payload });
+					  const res = await fetch(`${CONFIG.GAS_URL}?${params}`);
+					  const json = await res.json();
+					  if (!json.ok) throw new Error(json.error || 'サーバーエラー');
+					  return json;
+					}
+					
+					async function loadPeriodData() {
+					  const pk = periodKey(currentPeriod.year, currentPeriod.month);
+					  if (CONFIG.GAS_URL === 'YOUR_GAS_URL_HERE') {
+					    try { const d = localStorage.getItem('sl_' + pk); if(d) shiftData[pk] = JSON.parse(d); } catch(e){}
+					    renderEmpDD(); renderShiftInput();
+					    return;
+					  }
+					  showLoading('データ取得中...');
+					  try {
+					    const res = await gasReq('getMonth', { month: pk });
+					    shiftData[pk] = res.data || {};
+					    renderEmpDD(); renderShiftInput();
+					    if (currentView === 'admin') renderAdmin();
+					  } catch(e) { showToast('⚠️ データ取得失敗: ' + e.message); }
+					  finally { hideLoading(); }
+					}
+					
+					async function saveShifts() {
+					  if (!selectedEmp) return;
+					  const pk = periodKey(currentPeriod.year, currentPeriod.month);
+					  const empData = (shiftData[pk] || {})[selectedEmp] || {};
+					  setSyncBadge('loading','保存中...');
+					  document.querySelector('.save-btn').disabled = true;
+					  if (CONFIG.GAS_URL === 'YOUR_GAS_URL_HERE') {
+					    if(!shiftData[pk]) shiftData[pk]={};
+					    try { localStorage.setItem('sl_' + pk, JSON.stringify(shiftData[pk])); } catch(e){}
+					    setSyncBadge('ok','保存済み ✓'); document.querySelector('.save-btn').disabled = false;
+					    showToast('✅ 保存しました（ローカル）'); renderEmpDD(); updateEmpStatus();
+					    return;
+					  }
+					  try {
+					    await gasReq('saveEmployee', { month: pk, employee: selectedEmp, data: JSON.stringify(empData) });
+					    setSyncBadge('ok','保存済み ✓');
+					    showToast('✅ 保存しました'); renderEmpDD(); updateEmpStatus();
+					  } catch(e) {
+					    setSyncBadge('err','保存失敗');
+					    showToast('❌ 保存に失敗しました: ' + e.message);
+					  } finally { document.querySelector('.save-btn').disabled = false; }
+					}
+					
+					async function reloadAdmin() {
+					  showLoading('最新データ取得中...');
+					  try { await loadPeriodData(); renderAdmin(); showToast('🔄 更新しました'); }
+					  catch(e) { showToast('⚠️ ' + e.message); }
+					  finally { hideLoading(); }
+					}
+					
+					// ── UI ─────────────────────────────────────────────────────────
+					function switchView(v) {
+					  currentView = v;
+					  document.getElementById('inputView').style.display = v==='input'?'':'none';
+					  document.getElementById('adminView').style.display = v==='admin'?'':'none';
+					  document.querySelectorAll('.nav-tab').forEach((t,i) =>
+					    t.classList.toggle('active',(i===0&&v==='input')||(i===1&&v==='admin')));
+					  if (v === 'admin') loadPeriodData().then(()=>renderAdmin());
+					}
+					
+					function updatePeriodBar() {
+					  document.getElementById('periodLabel').textContent = getPeriodLabel();
+					  document.getElementById('periodRange').textContent = getPeriodRangeLabel();
+					}
+					
+					function changePeriod(delta) {
+					  let {year:y, month:m} = currentPeriod;
+					  m += delta;
+					  if (m > 12) { m = 1; y++; }
+					  if (m < 1)  { m = 12; y--; }
+					  currentPeriod = {year:y, month:m};
+					  updatePeriodBar();
+					  selectedEmp = null;
+					  renderEmpDD();
+					  loadPeriodData();
+					}
+					
+					function renderEmpDD() {
+					  const pk = periodKey(currentPeriod.year, currentPeriod.month);
+					  const dd = document.getElementById('empDD');
+					  dd.innerHTML = '<option value="">-- 従業員を選んでください --</option>';
+					  CONFIG.EMPLOYEES.forEach(name => {
+					    const filled = Object.keys((shiftData[pk]||{})[name]||{}).length;
+					    const opt = document.createElement('option');
+					    opt.value = name; opt.textContent = name + (filled>0?' ✓':'');
+					    if (name === selectedEmp) opt.selected = true;
+					    dd.appendChild(opt);
+					  });
+					  updateEmpStatus();
+					}
+					
+					function updateEmpStatus() {
+					  const pk = periodKey(currentPeriod.year, currentPeriod.month);
+					  const total = getPeriodDays().length;
+					  const row = document.getElementById('empStatusRow');
+					  const dot = document.getElementById('empDot');
+					  const txt = document.getElementById('empTxt');
+					  if (!selectedEmp) { row.style.display='none'; return; }
+					  const filled = Object.keys((shiftData[pk]||{})[selectedEmp]||{}).length;
+					  row.style.display = 'flex';
+					  if (filled===0) { dot.className='sdot-sm'; txt.textContent='未入力'; }
+					  else if (filled<total) { dot.className='sdot-sm partial'; txt.textContent=`${filled} / ${total} 日 入力済み`; }
+					  else { dot.className='sdot-sm done'; txt.textContent=`全 ${total} 日 入力済み`; }
+					}
+					
+					function selectEmp(name) {
+					  selectedEmp = name || null;
+					  updateEmpStatus();
+					  renderShiftInput();
+					}
+					
+					function getShift(ds) {
+					  const pk = periodKey(currentPeriod.year, currentPeriod.month);
+					  return ((shiftData[pk]||{})[selectedEmp]||{})[ds] || null;
+					}
+					function setShift(ds, val) {
+					  const pk = periodKey(currentPeriod.year, currentPeriod.month);
+					  if (!shiftData[pk]) shiftData[pk]={};
+					  if (!shiftData[pk][selectedEmp]) shiftData[pk][selectedEmp]={};
+					  if (val===null) delete shiftData[pk][selectedEmp][ds];
+					  else shiftData[pk][selectedEmp][ds] = val;
+					}
+					
+					function getShiftType(val) {
+					  if (!val) return null;
+					  return typeof val==='object' ? val.type : val;
+					}
+					
+					function renderShiftInput() {
+					  const card = document.getElementById('shiftCard');
+					  if (!selectedEmp) {
+					    card.innerHTML='<div class="empty"><div class="ico">👆</div><p>上から従業員を選択してシフトを入力してください</p></div>';
+					    return;
+					  }
+					  const days = getPeriodDays();
+					  const {year:y, month:m} = currentPeriod;
+					  const dayNames=['日','月','火','水','木','金','土'];
+					
+					  let html = `
+					    <div class="shift-card-header">
+					      <div class="emp-badge">${selectedEmp}
+					        <span style="font-size:12px;font-weight:400;color:var(--text2);margin-left:6px">${getPeriodLabel()}</span>
+					      </div>
+					      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+					        <span class="sync-badge" id="syncBadge"></span>
+					        <button class="save-btn" onclick="saveShifts()">💾 保存</button>
+					      </div>
+					    </div>
+					    <table class="shift-table">
+					      <thead><tr><th>日付</th><th>シフト</th></tr></thead>
+					      <tbody>`;
+					
+					  days.forEach(({day, month:dm, d, ds}) => {
+					    const sat = d.getDay()===6, sun = d.getDay()===0, holi = CONFIG.HOLIDAYS[ds];
+					    const cls = sat?'is-sat':(sun||holi)?'is-holi':'';
+					    const cur = getShift(ds);
+					    const curType = getShiftType(cur);
+					    const curNote = (cur&&typeof cur==='object')?cur.note:'';
+					
+					    const btns = CONFIG.SHIFT_TYPES.map(t => {
+					      const active = curType===t.key ? ` sel-${t.key}` : '';
+					      return `<button class="s-btn${active}" data-val="${t.key}" onclick="toggleShift('${ds}','${t.key}',this)">${t.label}</button>`;
+					    }).join('');
+					
+					    const noteEl = CONFIG.SHIFT_TYPES.find(t=>t.key===curType&&t.hasNote)
+					      ? `<div class="other-wrap"><input class="other-inp" type="text" placeholder="内容を入力..." value="${curNote}" oninput="setNote('${ds}',this.value)"></div>`
+					      : `<div class="other-wrap" style="display:none"></div>`;
+					
+					    // 月をまたぐ場合は日付に月も表示
+					    const dayLabel = dm!==m ? `<span style="font-size:9px;color:var(--text3);margin-right:1px">${dm}/</span>${day}` : day;
+					
+					    html += `<tr data-ds="${ds}">
+					      <td><div class="date-cell ${cls}">
+					        <span class="date-num">${dayLabel}</span>
+					        <span class="day-pill">${dayNames[d.getDay()]}</span>
+					        ${holi?`<span class="holi-name">${holi}</span>`:''}
+					      </div></td>
+					      <td><div class="shift-sel">${btns}</div>${noteEl}</td>
+					    </tr>`;
+					  });
+					
+					  html += `</tbody></table>`;
+					
+					  // サマリーバー
+					  const pk = periodKey(currentPeriod.year, currentPeriod.month);
+					  const empData = (shiftData[pk]||{})[selectedEmp]||{};
+					  const counts = {};
+					  CONFIG.SHIFT_TYPES.forEach(t=>counts[t.key]=0);
+					  Object.values(empData).forEach(v=>{
+					    const k = getShiftType(v); if(counts[k]!==undefined) counts[k]++;
+					  });
+					  const totalOut = CONFIG.SHIFT_TYPES.filter(t=>t.countable).reduce((s,t)=>s+counts[t.key],0);
+					
+					  html += `<div class="summary-bar">
+					    ${CONFIG.SHIFT_TYPES.map(t=>`
+					      <div class="sum-item">
+					        <span style="color:${t.color}">●</span>
+					        <span class="sum-count" style="color:${t.color}">${counts[t.key]}</span>
+					        <span>${t.label}</span>
+					      </div>`).join('')}
+					    <div class="sum-item" style="margin-left:auto">
+					      <span style="color:var(--primary)">合計出勤</span>
+					      <span class="sum-count" style="color:var(--primary);margin:0 4px" id="totalCount">${totalOut}</span>
+					      <span>日</span>
+					    </div>
+					  </div>`;
+					
+					  card.innerHTML = html;
+					}
+					
+					function toggleShift(ds, val, btn) {
+					  const cur = getShift(ds);
+					  const curType = getShiftType(cur);
+					  const newType = curType===val ? null : val;
+					  const typeDef = CONFIG.SHIFT_TYPES.find(t=>t.key===newType);
+					  setShift(ds, newType===null ? null : (typeDef?.hasNote ? {type:newType,note:''} : newType));
+					
+					  const row = btn.closest('tr');
+					  row.querySelectorAll('.s-btn').forEach(b=>{
+					    b.className = 's-btn' + (newType===b.dataset.val ? ` sel-${b.dataset.val}` : '');
+					  });
+					  const wrap = row.querySelector('.other-wrap');
+					  if (typeDef?.hasNote && newType) {
+					    wrap.style.display='flex';
+					    const inp=wrap.querySelector('input'); inp.value=''; inp.focus();
+					  } else { wrap.style.display='none'; }
+					  refreshSummary();
+					  setSyncBadge('','');
+					}
+					
+					function setNote(ds, note) {
+					  const cur = getShift(ds);
+					  if (cur&&typeof cur==='object') { cur.note=note; setShift(ds,cur); }
+					  setSyncBadge('','');
+					}
+					
+					function refreshSummary() {
+					  const pk = periodKey(currentPeriod.year, currentPeriod.month);
+					  const empData = (shiftData[pk]||{})[selectedEmp]||{};
+					  const counts={};
+					  CONFIG.SHIFT_TYPES.forEach(t=>counts[t.key]=0);
+					  Object.values(empData).forEach(v=>{const k=getShiftType(v);if(counts[k]!==undefined)counts[k]++;});
+					  const totalOut=CONFIG.SHIFT_TYPES.filter(t=>t.countable).reduce((s,t)=>s+counts[t.key],0);
+					  const sc = document.querySelectorAll('.sum-count');
+					  CONFIG.SHIFT_TYPES.forEach((t,i)=>{ if(sc[i]) sc[i].textContent=counts[t.key]; });
+					  const tc = document.getElementById('totalCount');
+					  if(tc) tc.textContent=totalOut;
+					}
+					
+					function setSyncBadge(type, msg) {
+					  const b=document.getElementById('syncBadge'); if(!b) return;
+					  if(!type){b.textContent='';b.className='sync-badge';return;}
+					  b.textContent=msg; b.className='sync-badge sync-'+type;
+					}
+					
+					// ── 管理者集計 ─────────────────────────────────────────────────
+					function renderAdmin() {
+					  const days = getPeriodDays();
+					  const pk = periodKey(currentPeriod.year, currentPeriod.month);
+					  document.getElementById('adminSub').textContent = `${getPeriodLabel()}（${getPeriodRangeLabel()}） — 対象日 ${days.length}日`;
+					
+					  // ヘッダー生成
+					  const head = document.getElementById('adminHead');
+					  head.innerHTML = '<th>従業員名</th>'
+					    + CONFIG.SHIFT_TYPES.map(t=>`<th>${t.label}</th>`).join('')
+					    + '<th>出勤合計</th><th>入力状況</th>';
+					
+					  const body = document.getElementById('adminBody');
+					  body.innerHTML = '';
+					
+					  CONFIG.EMPLOYEES.forEach(name => {
+					    const empData = (shiftData[pk]||{})[name]||{};
+					    const counts={};
+					    CONFIG.SHIFT_TYPES.forEach(t=>counts[t.key]=0);
+					    days.forEach(({ds})=>{
+					      const v=empData[ds]; if(!v) return;
+					      const k=getShiftType(v); if(counts[k]!==undefined) counts[k]++;
+					    });
+					    const filled = CONFIG.SHIFT_TYPES.reduce((s,t)=>s+counts[t.key],0);
+					    const totalOut = CONFIG.SHIFT_TYPES.filter(t=>t.countable).reduce((s,t)=>s+counts[t.key],0);
+					    let si='sdot-none',st='未入力';
+					    if(filled===days.length){si='sdot-done';st='入力済み';}
+					    else if(filled>0){si='sdot-partial';st=`${filled}/${days.length} 日入力`;}
+					
+					    const tr=document.createElement('tr');
+					    tr.innerHTML=`<td>${name}</td>`
+					      + CONFIG.SHIFT_TYPES.map(t=>`<td><span class="badge" style="background:${t.bg};color:${t.color}">${counts[t.key]}</span></td>`).join('')
+					      + `<td><span class="badge badge-total">${totalOut} 日</span></td>`
+					      + `<td><span class="sdot ${si}"></span>${st}</td>`;
+					    body.appendChild(tr);
+					  });
+					}
+					
+					// ── CSV出力 ────────────────────────────────────────────────────
+					function exportCSV() {
+					  const days = getPeriodDays();
+					  const pk = periodKey(currentPeriod.year, currentPeriod.month);
+					
+					  const noteKeys = CONFIG.SHIFT_TYPES.filter(t=>t.hasNote).map(t=>t.key);
+					  const headers = ['従業員名',
+					    ...CONFIG.SHIFT_TYPES.map(t=>t.label+'日数'),
+					    '出勤合計日数',
+					    ...(noteKeys.length>0?['その他メモ']:[])
+					  ];
+					  const rows = [headers];
+					
+					  CONFIG.EMPLOYEES.forEach(name=>{
+					    const empData=(shiftData[pk]||{})[name]||{};
+					    const counts={};
+					    CONFIG.SHIFT_TYPES.forEach(t=>counts[t.key]=0);
+					    const notes=[];
+					    days.forEach(({ds,day,month:dm})=>{
+					      const v=empData[ds]; if(!v) return;
+					      const k=getShiftType(v); if(counts[k]!==undefined) counts[k]++;
+					      if(noteKeys.includes(k)&&typeof v==='object'&&v.note) notes.push(`${dm}/${day}:${v.note}`);
+					    });
+					    const totalOut=CONFIG.SHIFT_TYPES.filter(t=>t.countable).reduce((s,t)=>s+counts[t.key],0);
+					    rows.push([name,
+					      ...CONFIG.SHIFT_TYPES.map(t=>counts[t.key]),
+					      totalOut,
+					      ...(noteKeys.length>0?[notes.join(' / ')]:[''])
+					    ]);
+					  });
+					
+					  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+					  const {year:y,month:m}=currentPeriod;
+					  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+					  const a=document.createElement('a');
+					  a.href=URL.createObjectURL(blob);
+					  a.download=`シフト集計_${y}年${m}${CONFIG.PERIOD_LABEL}.csv`;
+					  a.click();
+					  showToast('⬇ CSV出力しました');
+					}
+					
+					// ── Utils ──────────────────────────────────────────────────────
+					function showLoading(msg='通信中...'){document.getElementById('loadTxt').textContent=msg;document.getElementById('loading').classList.add('show');}
+					function hideLoading(){document.getElementById('loading').classList.remove('show');}
+					let toastTimer;
+					function showToast(msg){
+					  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+					  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+					}
+					</script>
+					
+					</body>
+					</html>
