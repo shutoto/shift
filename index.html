@@ -36,18 +36,24 @@
 /* App shell */
 .app{display:none;}
 .app.show{display:block;}
-.header{background:var(–surface);border-bottom:1px solid var(–border);padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.06);}
-.header-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:56px;gap:10px;}
-.logo{font-size:16px;font-weight:700;color:var(–primary);white-space:nowrap;}
+.header{background:var(–surface);border-bottom:1px solid var(–border);padding:0 14px;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.06);}
+.header-inner{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;align-items:center;padding:8px 0 6px;gap:7px;}
+.header-top{width:100%;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-size:15px;font-weight:700;color:var(–primary);white-space:nowrap;}
 .logo span{color:var(–text);font-weight:300;}
-.logo-role{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700;margin-left:6px;vertical-align:middle;}
+.logo-role{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700;margin-left:5px;vertical-align:middle;}
 .logo-role.emp{background:var(–primary-light);color:var(–primary);}
 .logo-role.admin{background:#fef3c7;color:#92400e;}
-.nav-tabs{display:flex;gap:3px;background:var(–bg);padding:4px;border-radius:10px;}
-.nav-tab{padding:6px 13px;border-radius:7px;border:none;background:transparent;font-family:inherit;font-size:12px;font-weight:500;color:var(–text2);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.nav-tabs{display:flex;gap:2px;background:var(–bg);padding:3px;border-radius:10px;}
+.nav-tab{padding:6px 20px;border-radius:7px;border:none;background:transparent;font-family:inherit;font-size:12px;font-weight:500;color:var(–text2);cursor:pointer;transition:all .15s;white-space:nowrap;}
 .nav-tab.active{background:var(–surface);color:var(–primary);box-shadow:0 1px 4px rgba(0,0,0,.1);}
-.logout-btn{padding:5px 11px;border-radius:7px;border:1.5px solid var(–border);background:transparent;font-family:inherit;font-size:12px;color:var(–text2);cursor:pointer;transition:all .15s;white-space:nowrap;}
-.logout-btn:hover{color:var(–sun);border-color:var(–sun);}
+.header-right{display:flex;justify-content:flex-end;align-items:center;}
+.logout-btn{padding:5px 12px;border-radius:7px;border:1.5px solid var(–border);background:transparent;font-family:inherit;font-size:12px;color:var(–text2);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.logout-btn:hover{color:var(–sun);border-color:var(–sun);background:#fef2f2;}
+@media(min-width:600px){
+.header-inner{flex-direction:row;justify-content:space-between;padding:0;height:54px;gap:8px;}
+.header-top{width:auto;}
+}
 
 /* Period bar */
 .period-bar{background:var(–surface);border-bottom:1px solid var(–border);padding:9px 20px;}
@@ -163,11 +169,11 @@
   <header class="header">
     <div class="header-inner">
       <div class="logo">Shift<span>管理</span><span class="logo-role" id="roleLabel"></span></div>
-      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-        <div class="nav-tabs">
-          <button class="nav-tab active" onclick="switchView('input')">📝 シフト入力</button>
-          <button class="nav-tab admin-only" onclick="switchView('admin')" style="display:none">📊 集計</button>
-        </div>
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="switchView('input')">📝 シフト入力</button>
+        <button class="nav-tab admin-only" onclick="switchView('admin')" style="display:none">📊 集計</button>
+      </div>
+      <div class="header-right">
         <button class="logout-btn" onclick="logout()">ログアウト</button>
       </div>
     </div>
@@ -547,6 +553,16 @@ function updateEmpStatus() {
 
 function selectEmp(name) {
   selectedEmp = name || null;
+  if (selectedEmp) {
+    // 未入力の日をすべて「休み」で埋める
+    const pk = periodKey(currentPeriod.year, currentPeriod.month);
+    if (!shiftData[pk]) shiftData[pk] = {};
+    if (!shiftData[pk][selectedEmp]) shiftData[pk][selectedEmp] = {};
+    const empData = shiftData[pk][selectedEmp];
+    getPeriodDays().forEach(({ds}) => {
+      if (!empData[ds]) empData[ds] = 'off';
+    });
+  }
   updateEmpStatus();
   renderShiftInput();
 }
